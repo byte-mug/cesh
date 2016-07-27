@@ -1,6 +1,6 @@
 CC := gcc
 
-all: yash
+all: cesh
 	true
 
 lua.a:
@@ -17,8 +17,8 @@ lib.a:
 main += main.o tokens.o compile.o functions.o pipelib.o func2.o
 main += lib.a lua.a
 
-yash: $(main)
-	$(CC) $(main) lua.a -lm -o yash
+cesh: $(main)
+	$(CC) $(main) lua.a -lm -o cesh
 
 clean:
 	rm luaobj/*.o
