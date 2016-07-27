@@ -22,6 +22,7 @@
 #include <string.h>
 #include "compile.h"
 #include "token.h"
+#include "libsrc/linenoise.h"
 
 char buffer[1<<12];
 
@@ -163,13 +164,23 @@ static sds compile_expr(const char* str,int flags,size_t *pos){
 	return NULL;
 }
 
+int ln_eof=0;
+
 static sds getLine(FILE* src){
 	size_t pos[4];
+	const char* str;
 	pos[1]=0;
 	sds data = NULL;
 restart:
-	if(!fgets(buffer,sizeof(buffer),src))return data;
-	data = data?sdscat(data,buffer):sdsnew(buffer);
+	if((src==NULL)){
+		str = linenoise("> ");
+		if(!str){ ln_eof = 1; return data; }
+		data = data?sdscat(data,str):sdsnew(str);
+		free(str);
+	}else{
+		if(!fgets(buffer,sizeof(buffer),src))return data;
+		data = data?sdscat(data,buffer):sdsnew(buffer);
+	}
 	while(next_token(data,pos)){
 		if(data[pos[0]]=='\\'){
 			pos[2] = pos[0];

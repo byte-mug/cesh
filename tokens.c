@@ -74,48 +74,11 @@ int next_token(const char* str,size_t* pos){
 		pos[1]=i;
 		return 1;
 	default:
-		
-		if(!stcmp(str+i,"...")){
-			pos[1]=i+3;
-			return 1;
-		}
-		if(
-			(!stcmp(str+i,"<<"))||
-			(!stcmp(str+i,">>"))||
-			(!stcmp(str+i,".."))||
-			(!stcmp(str+i,"//"))||
-			(!stcmp(str+i,"<="))||
-			(!stcmp(str+i,">="))||
-			(!stcmp(str+i,"=="))||
-			(!stcmp(str+i,"~="))||
-			(!stcmp(str+i,"~&"))
-		){
-			pos[1]=i+2;
-			return 1;
-		}
-		if(isIdentFirst(echr)){
-			for(i++;isIdent(str[i]);i++);
-			pos[1]=i;
-			return 1;
-		}
-		if(echr=='0'){
+		while(str[i]>' '){
+			if(str[i]=='\\') i++;
 			i++;
-			switch(str[i]){
-			case 'x':
-				for(i++;isHex(str[i]);i++);
-				break;
-			default:
-				for(;isOct(str[i]);i++);
-			}
-			pos[1]=i;
-			return 1;
 		}
-		if(isDigit(echr)){
-			for(i++;isDigit(str[i]);i++);
-			pos[1]=i;
-			return 1;
-		}
-		pos[1]=i+1;
+		pos[1] = i;
 		return 1;
 	}
 	return 0;

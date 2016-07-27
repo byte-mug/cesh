@@ -57,6 +57,7 @@ static const char * sh_read (lua_State *L,void *data,size_t *size){
 /* see functions.c */
 void sh_install(lua_State *L);
 void sh_install2(lua_State *L);
+extern int ln_eof;
 
 int main(int argc,const char* const* argv){
 	/*
@@ -85,8 +86,8 @@ int main(int argc,const char* const* argv){
 	size_t pos[2];
 	int count=0;
 	for(;;){
-		
-		sds str = compile_line(stdin);
+		sds str = compile_line(NULL);
+		if(ln_eof) return 1;
 		if(!str)continue;
 		printf("%s\n",str);
 		sdsfree(str);
