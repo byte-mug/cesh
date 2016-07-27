@@ -18,7 +18,7 @@ main += main.o tokens.o compile.o functions.o pipelib.o func2.o
 main += lib.a lua.a
 
 dsh: $(main)
-	$(CC) $(main) lua.a -lm -o bts
+	$(CC) $(main) lua.a -lm -o dsh
 
 clean:
 	rm luaobj/*.o
