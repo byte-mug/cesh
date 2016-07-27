@@ -22,6 +22,6 @@
 #include <stdio.h>
 #include "libsrc/sds.h"
 
-sds compile_line_str(sds line);
+sds compile_line_str(sds line,int iact);
 sds compile_line(FILE* src);
 

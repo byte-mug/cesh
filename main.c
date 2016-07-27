@@ -60,19 +60,20 @@ void sh_install2(lua_State *L);
 extern int ln_eof;
 
 int main(int argc,const char* const* argv){
-	/*
+
 	int n;
 	struct reader re = {NULL,NULL};
-	if(argc<2) {
-		printf("usage: %s <script> args...\n",argv[0]);
-		return 1;
-	}
+	//if(argc<2) {
+	//	printf("usage: %s <script> args...\n",argv[0]);
+	//	return 1;
+	//}
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
 	sh_install(L);
 	sh_install2(L);
-	re.in = fopen(argv[1],"r");
-	if(!re.in)return 1;
+	//re.in = fopen(argv[1],"r");
+	//if(!re.in)return 1;
+	/*
 	//luaL_loadfile(L,argv[1]);
 	lua_load(L,sh_read,&re,argv[1],"bt");
 
@@ -81,7 +82,8 @@ int main(int argc,const char* const* argv){
 	}
 	lua_pcall(L,n-1,0,0);
 	
-	return 0;*/
+	return 0;
+	 */
 
 	size_t pos[2];
 	int count=0;
@@ -89,7 +91,10 @@ int main(int argc,const char* const* argv){
 		sds str = compile_line(NULL);
 		if(ln_eof) return 1;
 		if(!str)continue;
-		printf("%s\n",str);
+		luaL_dostring(L,str);
+		lua_settop(L,0);
+		//printf("%s\n",str);
 		sdsfree(str);
 	}
 }
+

@@ -152,9 +152,11 @@ static const string_t sh_pipe =
 static const string_t sh__S =
 	"local getenv = _getenv;\n"
 	"local setenv = _setenv;\n"
+	"local jn = _jn;\n"
 	"local e = setmetatable({},{"
 	" __index = function(t,k) "
 	"  local env = getenv(k); \n"
+	"  if env then env={env} else env={} end\n"
 	"  t[k] = env; \n"
 	"  return env \n"
 	" end\n"
@@ -162,7 +164,7 @@ static const string_t sh__S =
 	"_S = e;\n"
 	"function export(k)\n"
 	" local v = e[k]\n"
-	" if v then setenv(k,v) end\n"
+	" if v[1] then setenv(k,jn(v,' ')) end\n"
 	"end\n"
 ;
 
@@ -182,6 +184,17 @@ void sh_install(lua_State *L){
 	luaL_dostring(L,sh_spawnp);
 	luaL_dostring(L,sh_slot);
 	luaL_dostring(L,sh_pipe);
+	luaL_dostring(L,
+		"_tp = table.pack; \n_tu = table.unpack; \nlocal ipairz  = ipairs; \n"
+		"function _jnl(a,b)\n local i,v,n,t; \n t = {}; \n"
+		" for i,v in ipairz(a) do\n t[i]=v end\n n = #a; \n"
+		" for i,v in ipairz(b) do\n t[i+n]=v end\n"
+		" return t\n"
+		"end\n"
+		"function _jn(l,d)\n local i,v,s; \n s=''; \n for i,v in ipairz(l) do\n"
+		"  if i == 1 then s = v else s = s .. d .. v end \n"
+		"end \n return s\n end\n"
+	);
 	luaL_dostring(L,sh__S);
 	lua_settop(L,0);
 }
