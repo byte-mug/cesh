@@ -38,6 +38,19 @@ static inline int isIdentFirst(char x){
 	return ((x>='a')&&(x<='z'))|((x>='A')&&(x<='Z'))|x=='_';
 }
 
+static inline int isDigit(char x){
+	return ((x>='0')&&(x<='9'));
+}
+
+static size_t numvarlen(const char* c,size_t len){
+	size_t i = 2;
+	while(i<len){
+		if(!isDigit(c[i]))break;
+		i++;
+	}
+	return i;
+}
+
 enum {
 	F_isPiped = 1<<0,
 	F_isAssign = 1<<1,
@@ -70,9 +83,46 @@ static inline sds compile_shell(const char* str,size_t len, sds first){
 	case '\'':
 		return sdscatlen(first,str,len);
 	case '$':
-		first = sdscat(first,"_S.");
-		first = sdscatlen(first,str+1,len-1);
-		return first;
+		switch(str[1]){
+		case '@':
+		case '*':
+			first = sdscat(first,"_tu(ARGV)");
+			return first;
+		case '?':
+			first = sdscat(first,"'0'");
+			return first;
+		case '!':
+			first = sdscat(first,"''");
+			return first;
+		case '$':
+			first = sdscat(first,"_getpidi()");
+			return first;
+		case '0':
+			len = 2;
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			len = numvarlen(str,len);
+			first = sdscat(first,"ARGV[");
+			first = sdscatlen(first,str+1,len-1);
+			first = sdscat(first,"]");
+			return first;
+		default:
+			if(len==1){
+				first = sdscat(first,"'$'");
+				return first;
+			}
+			first = sdscat(first,"_tu(_S[");
+			first = sdscatrepr(first,str+1,len-1);
+			first = sdscat(first,"])");
+			return first;
+		}
 	}
 	first = sdscatrepr(first,str,len);
 	return first;
@@ -97,7 +147,7 @@ static sds compile_expr(const char* str,int flags,size_t *pos){
 	int param,isexpr;
 	if(!next_token(str,pos))return NULL;
 	isexpr=0;
-	if(isIdentFirst(str[pos[0]])){
+	{
 		first = sdsnewlen(str+pos[0],pos[1]-pos[0]);
 		if(!strcmp(first,"do")){
 			sdsfree(first);
@@ -108,57 +158,32 @@ static sds compile_expr(const char* str,int flags,size_t *pos){
 			}else
 				first = sdsnewlen(str+pos[0],pos[1]-pos[0]);
 		}
+		if(flags&F_isPiped){
+			s1 = sdsnew("_slot(_execp,"); /*)*/
+		}else{
+			s1 = sdsnew("_spawnp(");/*)*/
+		}
+		if(isexpr) s1 = sdscatsds(s1,first);
+		else s1 = compile_shell(first,sdslen(first),s1);
+		sdsfree(first);
 		if(!next_token(str,pos)) {
-			if(flags&F_isPiped){
-				s1 = sdsnew("_slot(_execp,"); /*)*/
-			}else{
-				s1 = sdsnew("_spawnp(");/*)*/
-			}
-			if(isexpr) s1 = sdscatsds(s1,first);
-			else s1 = compile_shell(first,sdslen(first),s1);
-			sdsfree(first);
 			s1 = sdscat(s1,")");
 			return s1;
 		}
-		if(str[pos[0]]=='(') /*)*/{
-			if(flags&F_isPiped){
-				s1 = sdsnew("_slot("); /*)*/
-				s1 = sdscatsds(s1,first);
-				sdsfree(first);
-				first = s1;
-				s1 = NULL;
-				first = sdscat(first,",");
-			}else{
-				first = sdscat(first,"(");
-			}
-			first = compile_stock(str,pos,first,1);
-		}else{
-			if(flags&F_isPiped){
-				s1 = sdsnew("_slot(_execp,"); /*)*/
-			}else{
-				s1 = sdsnew("_spawnp(");/*)*/
-			}
-			if(isexpr) s1 = sdscatsds(s1,first);
-			else s1 = compile_shell(first,sdslen(first),s1);
-			sdsfree(first);
+		{
 			first = s1;
 			s1 = NULL;
 			do{
-				first = sdscat(first,",");
-				if(str[pos[0]]=='\\')
+				
+				if(((pos[1]-pos[0])==2)&!stcmp(str+pos[0],"<>")){
+					first = sdscat(first,"..");
 					if(!next_token(str,pos)) break;
-				if(str[pos[0]]=='(')
-					first = pull_off_par(compile_stock(str,pos,first,1));
-				else
-					first = compile_shell(str+pos[0],pos[1]-pos[0],first);
+				} else first = sdscat(first,",");
+				first = compile_shell(str+pos[0],pos[1]-pos[0],first);
 			}while(next_token(str,pos));
 			/*(*/
 			first = sdscat(first,")");
 		}
-		return first;
-	}else if(str[pos[0]]=='(') {
-		first = sdsnew("(");
-		first = compile_stock(str,pos,first,1);
 		return first;
 	}
 	return NULL;
@@ -200,8 +225,8 @@ static char compile_split_1(const char* str,size_t *pos){
 	register char chr;
 	while(next_token(str,pos)){
 		switch(chr=str[pos[0]]){
-		case '=':
-			if(pos[1]>(pos[0]+1))continue;
+//		case '=':
+//			if(pos[1]>(pos[0]+1))continue;
 		case '|':
 			return chr;
 		}

@@ -70,7 +70,10 @@ int next_token(const char* str,size_t* pos){
 	case '#': return 0;
 	case '$':
 		i++;
-		while(isIdent(str[i]))i++;
+		
+		if((str[i]>0) && (str[i]<=' '));
+		else if(!isIdent(str[i]))i++;
+		else while(isIdent(str[i]))i++;
 		pos[1]=i;
 		return 1;
 	default:
